@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package requisites;
+import "google/protobuf/empty.proto";
+message Requisite {
+  string id = 1;
+  string trader_id = 2;
+  string bank_id = 3;
+  string bank_name = 4;
+  string currency = 5;
+  int32 interval_sec = 6;
+  string holder_name = 7;
+  string holder_account = 8;
+  string method = 9;
+  int32 min_amount = 10;
+  int32 max_amount = 11;
+  bool cross_border = 12;
+  string last_four = 13;
+  int32 max_payments_limit = 14;
+}
+
+message GetRequisitesForPaymentRequest {
+  optional string method_type = 1;
+  double amount = 2;
+  string currency = 3;
+  optional bool cross_border = 4;
+  optional string bank = 5;
+}
+
+message DeactivateRequisitesByIdRequest {
+  string id = 1;
+}
+
+
+message GetRequisitesForPaymentResponse {
+  repeated Requisite requisites = 2;
+}
+
+service RequisiteService {
+  rpc GetRequisitesForPayment(GetRequisitesForPaymentRequest) returns (GetRequisitesForPaymentResponse);
+  rpc DeactivateRequisitesByBankId(DeactivateRequisitesByIdRequest) returns (google.protobuf.Empty);
+  rpc DeactivateRequisitesByTraderId(DeactivateRequisitesByIdRequest) returns (google.protobuf.Empty);
+}

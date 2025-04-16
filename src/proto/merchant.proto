@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package merchant;
+
+import "google/protobuf/empty.proto";
+
+message PaymentMethod {
+  string currency = 1;
+  optional string bank = 2;
+  optional string method_type = 3;
+  string payment_method_id = 4;
+  double sell_margin = 5;
+  double buy_margin = 6;
+  string name = 7;
+  bool cross_border = 8;
+  bool cb_allow = 9;
+  int64 payment_exp = 10;
+}
+
+
+message PaymentMethodList {
+  repeated PaymentMethod list = 1;
+}
+
+enum BalanceActionType {
+  FROZE_SOFT = 0;
+  FROZE_HARD = 1;
+  UNFROZE = 2;
+  WITHDRAW_MAIN = 3;
+  WITHDRAW_FROZE = 4;
+  DEPOSIT = 5;
+}
+
+message ChangeBalanceRequest {
+  string merchant_id = 1;
+  double amount = 2;
+  BalanceActionType action_type = 3;
+  string idempotent_key = 4;
+}
+
+message GetPaymentMethodRequest {
+  string merchant_id = 1;
+  string payment_method_id = 2;
+}
+
+message GetPMListReq {
+  string merchant_id = 1;
+}
+
+service MerchantService {
+  rpc ChangeBalance(ChangeBalanceRequest) returns (google.protobuf.Empty);
+  rpc GetPaymentMethod(GetPaymentMethodRequest) returns (PaymentMethod);
+  rpc GetPMList(GetPMListReq) returns (PaymentMethodList);
+}

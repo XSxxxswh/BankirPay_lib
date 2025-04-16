@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package banks;
+
+message GetBankInfoRequest {
+  string bank_id = 1;
+}
+
+message BankShort {
+  string id = 1;
+  string trader_id = 2;
+  string bank_name = 3;
+  string bank_type = 4;
+  string currency = 5;
+  string holder_name = 6;
+  bool enabled = 7;
+  bool activated = 8;
+  bool is_cross_border = 9;
+  int32 max_requisite_size = 10;
+}
+
+
+service BankService {
+  rpc GetBankInfo(GetBankInfoRequest) returns (BankShort);
+}

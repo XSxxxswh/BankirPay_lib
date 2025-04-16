@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package config;
+
+import "google/protobuf/empty.proto";
+
+message GetPaymentMethodsByIdReq {
+  string id = 1;
+}
+
+message GetPaymentMethodsByCurrencyReq {
+  string currency = 1;
+}
+
+message PaymentMethod {
+  string id = 1;
+  string name = 2;
+  string currency = 3;
+  double sell_fee_percent = 4;
+  double sell_payment_max_amount = 5;
+  double sell_payment_min_amount = 6;
+  double buy_fee_percent = 7;
+  double buy_payment_max_amount = 8;
+  double buy_payment_min_amount = 9;
+}
+
+message PaymentMethodList {
+  repeated PaymentMethod list = 1;
+}
+
+service ConfigService {
+  rpc GetPaymentMethodById(GetPaymentMethodsByIdReq) returns (PaymentMethod);
+  rpc GetPaymentMethodsByCurrency(GetPaymentMethodsByCurrencyReq) returns (PaymentMethodList);
+  rpc GetPaymentMethods(google.protobuf.Empty) returns(PaymentMethodList);
+}

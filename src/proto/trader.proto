@@ -1,0 +1,41 @@
+syntax = "proto3";
+package trader;
+import "google/protobuf/empty.proto";
+
+
+
+enum BalanceActionType {
+  FROZE_SOFT = 0;
+  FROZE_HARD = 1;
+  UNFROZE = 2;
+  WITHDRAW_FROZEN = 3;
+  WITHDRAW_MAIN = 4;
+  DEPOSIT = 5;
+}
+
+
+
+
+message ChangeBalanceRequest {
+  string trader_id = 1;
+  double amount = 2;
+  BalanceActionType action_type = 3;
+  string idempotent_key = 4;
+}
+
+message GetFeeConfigRequest {
+  string merchant_id = 1;
+  string payment_method_id = 2;
+}
+
+message GetTraderMarginRequest {
+  string trader_id = 1;
+}
+message GetTraderMarginResponse {
+  double margin = 1;
+}
+
+service TraderService {
+  rpc ChangeBalance(ChangeBalanceRequest) returns(google.protobuf.Empty);
+  rpc GetTraderMargin(GetTraderMarginRequest) returns (GetTraderMarginResponse);
+}
