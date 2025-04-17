@@ -1,6 +1,7 @@
 
 use redis::aio::MultiplexedConnection;
 use redis::AsyncCommands;
+use tokio_postgres::types::Type;
 use tracing::error;
 use crate::errors::LibError;
 use crate::errors::LibError::{InternalError, MerchantNotFound};
@@ -18,14 +19,14 @@ pub async fn check_merchant_is_blocked_from_redis(conn: &mut redis::aio::Multipl
 }
 
 pub async fn check_merchant_is_blocked_from_db(client : &tokio_postgres::Client, merchant_id : &str) -> Result<bool, LibError> {
-    let row  = client.query_opt(
+    let row  = client.query_typed(
         "SELECT is_blocked FROM merchants WHERE id=$1",
-        &[&merchant_id]
+        &[(&merchant_id, Type::VARCHAR)]
     ).await.map_err(|e| {
         error!(merchant_id=merchant_id,err=e.to_string(), "Error check merchant is blocked");
         InternalError
     })?;
-    Ok(row.ok_or(MerchantNotFound)?.get(0))
+    Ok(row.first().ok_or(MerchantNotFound)?.get(0))
 }
 
 pub async fn set_trader_is_blocked_to_redis(
