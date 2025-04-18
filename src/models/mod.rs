@@ -57,8 +57,7 @@ impl WorkerPool {
 }
 
 
-#[macro_export]
-macro_rules! map_err_with_log {
+pub macro_rules! map_err_with_log {
     ($res:expr, $msg:literal, $error:ident, $($name:ident),+) => {
         $res.map_err(|e| {
             error!(
