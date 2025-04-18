@@ -25,7 +25,7 @@ impl RequisitesService {
             .connect_timeout(Duration::from_secs(5))
             .timeout(Duration::from_secs(20))
             .tcp_keepalive(Some(Duration::from_secs(10)))
-            .connect()
+            .connect_lazy()
             .await
             .unwrap();
         let client = requisites_proto::requisite_service_client::RequisiteServiceClient::new(channel);
