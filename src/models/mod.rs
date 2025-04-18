@@ -55,3 +55,20 @@ impl WorkerPool {
         self.tx.send(job).await.expect("Failed to send job");
     }
 }
+
+
+#[macro_export]
+macro_rules! map_err_with_log {
+    ($res:expr, $msg:literal, $error:ident, $($name:ident),+) => {
+        $res.map_err(|e| {
+            error!(
+                $(
+                    $name = &$name,
+                )+
+                err = e.to_string(),
+                $msg
+            );
+            $error
+        })
+    };
+}
