@@ -19,7 +19,7 @@ pub struct RequisitesService {
 }
 
 impl RequisitesService {
-    pub async fn new(addr: String) -> Self {
+    pub fn new(addr: String) -> Self {
         let channel = Endpoint::from_str(addr.as_str())
             .unwrap()
             .connect_timeout(Duration::from_secs(5))

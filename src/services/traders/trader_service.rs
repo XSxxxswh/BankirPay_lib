@@ -38,15 +38,13 @@ pub struct TraderService {
 }
 
 impl TraderService {
-    pub async fn new(addr : String) -> Self {
+    pub fn new(addr : String) -> Self {
 
         let channel = Endpoint::from_str(addr.as_str())
             .unwrap()
             .connect_timeout(Duration::from_secs(5))
             .timeout(Duration::from_secs(20))
-            .tcp_keepalive(Some(Duration::from_secs(10))).connect()
-            .await
-            .unwrap();
+            .tcp_keepalive(Some(Duration::from_secs(10))).connect_lazy();
 
         let client = trader_proto::trader_service_client::TraderServiceClient::new(channel);
         info!("trader service connected");
