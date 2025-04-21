@@ -111,7 +111,7 @@ impl deadpool::managed::Manager for TraderServiceManager {
     type Error = LibError;
 
     async fn create(&self) -> Result<Self::Type, Self::Error> {
-        let trader_service = TraderService::new(self.addr.clone()).await;
+        let trader_service = TraderService::new(self.addr.clone());
         Ok(trader_service)
     }
 

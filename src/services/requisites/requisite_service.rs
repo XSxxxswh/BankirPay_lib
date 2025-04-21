@@ -79,7 +79,7 @@ impl deadpool::managed::Manager for RequisitesServiceManager {
     type Error = LibError;
 
     async fn create(&self) -> Result<Self::Type, Self::Error> {
-        let requisite_service = RequisitesService::new(self.addr.clone()).await;
+        let requisite_service = RequisitesService::new(self.addr.clone());
         Ok(requisite_service)
     }
 
