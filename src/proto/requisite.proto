@@ -17,6 +17,7 @@ message Requisite {
   bool cross_border = 12;
   string last_four = 13;
   int32 max_payments_limit = 14;
+  string card_last_four = 15;
 }
 
 message GetRequisitesForPaymentRequest {

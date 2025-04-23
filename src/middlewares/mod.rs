@@ -136,7 +136,6 @@ pub async fn for_all_users_middleware (
 }
 
 fn verify_jwt(token: &str) -> Result<models::Claims, LibError> {
-
     let token_data = decode::<Claims>(token, &DecodingKey::from_secret(SECRET.as_bytes()), &Validation::default()).map_err(|e| {
         error!("error verify jwt, {}", e);
         LibError::Unauthorized
