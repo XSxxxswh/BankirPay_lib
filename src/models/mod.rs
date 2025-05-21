@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::pin::Pin;
 use std::sync::Arc;
 use tokio::sync::Semaphore;
-
+pub mod payments;
 #[derive(Clone)]
 pub struct AuthState {
     pub pool: deadpool_postgres::Pool,

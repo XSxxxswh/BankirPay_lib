@@ -4,6 +4,7 @@ use tokio::time::sleep;
 use tonic::Request;
 use tonic::transport::Endpoint;
 use tracing::{debug, error, warn};
+use tracing::field::debug;
 use uuid::Uuid;
 use crate::errors::LibError;
 use crate::errors::LibError::InternalError;
@@ -11,6 +12,9 @@ use crate::merchant_proto;
 use crate::services::{need_retry, status_to_err};
 
 pub(crate) const RETRY_COUNT: usize = 5;
+
+pub const MERCHANT_CHANGE_BALANCE_TOPIC: &'static str = "merchant_change_balance";
+
 
 #[derive(Clone)]
 pub struct MerchantService {
@@ -85,6 +89,26 @@ impl MerchantService {
             }
         }
         error!(merchant_id=merchant_id,"[GRPC] retry count exceeded method = get_merchant_pms");
+        Err(InternalError)
+    }
+
+    pub async fn get_merchant_webhook_url(&mut self, merchant_id: String)
+    -> Result<String, LibError> {
+        debug!(merchant_id=merchant_id,"[GRPC] send get_merchant_webhook_url");
+        let request = merchant_proto::GetWebhookUrlRequest{
+            merchant_id: merchant_id.clone(),
+        };
+        for i in 0..RETRY_COUNT {
+            if i >= 1 {
+                warn!(merchant_id=merchant_id, "[GRPC] retry send get_merchant_webhook_url action attempt {}", i+1);
+            }
+            match self.client.get_webhook_url(Request::new(request.clone())).await {
+                Ok(result) => return Ok(result.into_inner().webhook_url),
+                Err(e) if need_retry(e.code()) => sleep(Duration::from_millis(100)).await,
+                Err(e) => return Err(status_to_err(e))
+            }
+        }
+        error!(merchant_id=merchant_id,"[GRPC] retry count exceeded method = get_merchant_webhook_url");
         Err(InternalError)
     }
 }

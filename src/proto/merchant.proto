@@ -46,9 +46,17 @@ message GetPaymentMethodRequest {
 message GetPMListReq {
   string merchant_id = 1;
 }
+message GetWebhookUrlRequest {
+  string merchant_id = 1;
+}
+
+message GetWebhookUrlResponse {
+  string webhook_url = 1;
+}
 
 service MerchantService {
   rpc ChangeBalance(ChangeBalanceRequest) returns (google.protobuf.Empty);
   rpc GetPaymentMethod(GetPaymentMethodRequest) returns (PaymentMethod);
   rpc GetPMList(GetPMListReq) returns (PaymentMethodList);
+  rpc GetWebhookUrl(GetWebhookUrlRequest) returns (GetWebhookUrlResponse);
 }

@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package payment;
+
+import "google/protobuf/timestamp.proto";
+
+message PaymentProto {
+  string id = 1;
+  string external_id = 2;
+  string merchant_id = 3;
+  optional string client_id = 4;
+  string trader_id = 5;
+  string requisite_id = 6;
+  string bank_id = 7;
+  string status = 8;
+  string payment_side = 9;
+  string currency = 10;
+  string target_amount = 11; // Decimal → string
+  string fiat_amount = 12;
+  string crypto_amount = 13;
+  string trader_crypto_amount = 14;
+  string exchange_rate = 15;
+  string fee_type = 16;
+  string crypto_fee = 17;
+  string fiat_fee = 18;
+  string trader_crypto_fee = 19;
+  string trader_fiat_fee = 20;
+  string holder_name = 21;
+  string holder_account = 22;
+  string bank_name = 23;
+  string method = 24;
+  string margin = 25;
+  string trader_margin = 26;
+  string earnings = 27;
+  google.protobuf.Timestamp created_at = 28;
+  google.protobuf.Timestamp updated_at = 29;
+  google.protobuf.Timestamp deadline = 30;
+  string last_four = 31;
+  string card_last_four = 32;
+  optional string close_by = 33;
+}
