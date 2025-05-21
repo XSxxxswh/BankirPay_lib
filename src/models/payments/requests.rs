@@ -39,7 +39,7 @@ impl GetPaymentsRequest {
                         query_conditions.push(format!("status IN ({})", statuses.iter().map(|status| status.get_statuses_for_sql_query())
                             .collect::<Vec<_>>().join(", ")));
                     }
-                    let limit = request.limit.unwrap_or(20).min(20);
+                    let limit = request.limit.unwrap_or(50).min(50);
                     let offset = (request.page.unwrap_or(1) - 1) * limit;
                     if !query_conditions.is_empty() {
                         query.push_str(" AND ");
@@ -71,7 +71,7 @@ impl GetPaymentsRequest {
                         query_conditions.push(format!("status IN ({})", states.iter().map(|status| status.get_statuses_for_sql_query())
                             .collect::<Vec<_>>().join(", ")));
                     }
-                    let limit = request.limit.unwrap_or(20).min(20);
+                    let limit = request.limit.unwrap_or(50).min(50);
                     let offset = (request.page.unwrap_or(1) - 1) * limit;
                     if !query_conditions.is_empty() {
                         query.push_str(" AND ");
@@ -121,7 +121,7 @@ impl GetPaymentsRequest {
                         query_conditions.push(format!("status IN ({})", states.iter().map(|status| status.get_statuses_for_sql_query())
                             .collect::<Vec<_>>().join(", ")));
                     }
-                    let limit = request.limit.unwrap_or(20).min(20);
+                    let limit = request.limit.unwrap_or(50).min(50);
                     let offset = (request.page.unwrap_or(1) - 1) * limit;
                     if !query_conditions.is_empty() {
                         query.push_str(" WHERE ");
@@ -157,13 +157,13 @@ impl GetPaymentsRequest {
         // возвращает запрошенный лимит
         match self { 
             GetPaymentsRequest::Merchant((_, request)) => {
-                request.unwrap().limit.unwrap_or(20).min(20) as usize
+                request.unwrap().limit.unwrap_or(50).min(50) as usize
             }
             GetPaymentsRequest::Trader((_, request)) => {
-                request.unwrap().limit.unwrap_or(20).min(20) as usize
+                request.unwrap().limit.unwrap_or(50).min(50) as usize
             },
             GetPaymentsRequest::Admin(req) => { 
-                req.unwrap().limit.unwrap_or(20).min(20) as usize
+                req.unwrap().limit.unwrap_or(50).min(50) as usize
             },
           
         }
