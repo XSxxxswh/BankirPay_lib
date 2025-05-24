@@ -167,17 +167,29 @@ impl GetPaymentsRequest {
         // создает SQL строку условий без фильтров и с id юзера если оно есть 
         match self { 
             GetPaymentsRequest::Trader((id, _)) => {
-                if let Some(ref mut index) = sql_index {
-                    **index += 1;
-                }
-                (format!(" WHERE trader_id=${}", if sql_index.is_none() {1}else{*sql_index.unwrap()}), Some(id.as_str()))
+                let index = match sql_index {
+                    Some(ref mut i) => {
+                        let current = **i;
+                        **i += 1;
+                        current
+                    }
+                    None => 1,
+                };
+
+                let query = format!(" WHERE trader_id=${}", index);
+                (query, Some(id.as_str()))
 
             },
             GetPaymentsRequest::Merchant((id, _)) => {
-                if let Some(ref mut index) = sql_index {
-                    **index += 1;
-                }
-                (format!(" WHERE merchant_id=${}", if sql_index.is_none() {1}else{*sql_index.unwrap()}), Some(id.as_str()))
+                let index = match sql_index {
+                    Some(ref mut i) => {
+                        let current = **i;
+                        **i += 1;
+                        current
+                    }
+                    None => 1,
+                };
+                (format!(" WHERE merchant_id=${}", index), Some(id.as_str()))
             },
             _ => (" ".to_string(), None),
         }
