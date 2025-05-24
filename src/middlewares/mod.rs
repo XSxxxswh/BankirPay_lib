@@ -83,6 +83,36 @@ pub async fn only_merchant_middleware(
     next.run(req).await
 }
 
+pub async fn merchant_api_middleware(
+    State(state): State<Arc<models::AuthState>>,
+    mut req: Request<Body>,
+    next: Next,
+) -> Response {
+    let merchant_id = match req.headers().get("X-Merchant-ID").and_then(|h| h.to_str().ok()) {
+        Some(id) => id,
+        None => return LibError::Unauthorized.into_response(),
+    };
+    let arc_claims = Arc::new(Claims{
+        sub: merchant_id.to_string(),
+        role: "".to_string(),
+        exp: 0,
+        impersonated_by: None,
+    });
+
+    match use_case::merchant::check_merchant_is_blocked(state, arc_claims.sub.as_str()).await {
+        Ok(a) if a => return LibError::Unauthorized.into_response(),
+        Err(e) => match e {
+            LibError::NotFound => return LibError::Forbidden.into_response(),
+            LibError::MerchantNotFound => return LibError::Forbidden.into_response(),
+            _ => return e.into_response(),
+        },
+        _ => ()
+    }
+    req.extensions_mut().insert(arc_claims.clone());
+    next.run(req).await
+}
+
+
 pub async fn only_admin_middleware (
     State(_): State<Arc<models::AuthState>>,
     mut req: Request<Body>,

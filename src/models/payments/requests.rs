@@ -2,7 +2,7 @@ use std::ops::Deref;
 use serde::Deserialize;
 use tokio_postgres::types::{ToSql, Type};
 use crate::models::payments::merchant::GetMerchantPayments;
-use crate::models::payments::payment::{GetPaymentRequestAdmin, PaymentStatuses};
+use crate::models::payments::payment::{GetPaymentRequestAdmin, PaymentSides, PaymentStatuses};
 use crate::models::payments::trader::GetPaymentsTrader;
 
 
@@ -18,6 +18,8 @@ pub enum GetPaymentsRequest {
 impl GetPaymentsRequest {
     // делает SQL строку из условий и массив из параметров
     pub fn to_sql(&self) -> (String, Vec<(&(dyn ToSql + Sync), Type)>) {
+        let mut from_exists = false;
+        let mut to_exists = false;
         match self {
             GetPaymentsRequest::Merchant((merchant_id, request)) => {
                 let mut query = String::from(" WHERE merchant_id=$1");
@@ -29,23 +31,50 @@ impl GetPaymentsRequest {
                     if let Some(id) = request.id.as_ref() {
                         query_conditions.push(format!("id=${}", param_index));
                         query_params.push((id, Type::VARCHAR));
-                    }
-                    if let Some(external_id) = request.external_id.as_ref() {
-                        query_conditions.push(format!("external_id=${}", param_index));
-                        query_params.push((external_id, Type::VARCHAR));
                         param_index += 1;
+                    }
+                    if let Some(side) = request.payment_side.as_ref() {
+                        query_conditions.push(format!("payment_side=${}", param_index));
+                        match side {
+                            PaymentSides::Buy => query_params.push((&"BUY", Type::VARCHAR)),
+                            PaymentSides::Sell => query_params.push((&"SELL", Type::VARCHAR)),
+                        }
+                        param_index += 1;
+                    }
+                    if let Some(from) = request.from.as_ref() {
+                        query_params.push((from, Type::TIMESTAMP));
+                        query_conditions.push(format!("created_at>=${}", param_index));
+                        param_index += 1;
+                        from_exists = true;
+                    }
+                    if let Some(to) = request.to.as_ref() {
+                        query_params.push((to, Type::TIMESTAMP));
+                        query_conditions.push(format!("created_at<=${}", param_index));
+                        param_index += 1;
+                        to_exists = true;
                     }
                     if let Some(statuses) = request.status.as_ref() {
                         query_conditions.push(format!("status IN ({})", statuses.iter().map(|status| status.get_statuses_for_sql_query())
                             .collect::<Vec<_>>().join(", ")));
                     }
-                    let limit = request.limit.unwrap_or(50).min(50);
-                    let offset = (request.page.unwrap_or(1) - 1) * limit;
                     if !query_conditions.is_empty() {
                         query.push_str(" AND ");
                     }
                     query.push_str(query_conditions.join(" AND ").as_str());
-                    query.push_str(format!(" ORDER BY created_at DESC LIMIT {} OFFSET {}", limit, offset).as_str());
+                    if from_exists && to_exists {
+                        if (request.to.unwrap() - request.from.unwrap()).num_days() > 30 {
+                            let limit = request.limit.unwrap_or(100).min(100);
+                            let offset = (request.page.unwrap_or(1) - 1) * limit;
+                            query.push_str(format!(" ORDER BY created_at DESC LIMIT {} OFFSET {}", limit, offset).as_str());
+                        }else {
+                            query.push_str(" ORDER BY created_at DESC");
+                        }
+                    }else {
+                        let limit = request.limit.unwrap_or(100).min(100);
+                        let offset = (request.page.unwrap_or(1) - 1) * limit;
+                        query.push_str(format!(" ORDER BY created_at DESC LIMIT {} OFFSET {}", limit, offset).as_str());
+                    }
+
                 }
 
                 (query, query_params)

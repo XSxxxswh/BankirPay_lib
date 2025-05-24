@@ -89,7 +89,7 @@ impl PaymentStatusesSlim{
 }
 impl Display for PaymentStatusesSlim {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self { 
+        match self {
             PaymentStatusesSlim::Completed => f.write_str("COMPLETED"),
             PaymentStatusesSlim::Processing => f.write_str("PROCESSING"),
             PaymentStatusesSlim::Frozen => f.write_str("FROZEN"),
@@ -100,7 +100,7 @@ impl Display for PaymentStatusesSlim {
 impl FromStr for PaymentStatusesSlim {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_uppercase().as_str() { 
+        match s.to_uppercase().as_str() {
             "COMPLETED" => Ok(PaymentStatusesSlim::Completed),
             "PROCESSING" => Ok(PaymentStatusesSlim::Processing),
             "FROZEN" => Ok(PaymentStatusesSlim::Frozen),
@@ -219,8 +219,11 @@ pub struct FullPayment {
     pub margin: Decimal,
     pub trader_margin: Decimal,
     pub earnings: Decimal,
+    #[serde(with = "my_time_format")]
     pub created_at: NaiveDateTime,
+    #[serde(with = "my_time_format_opt")]
     pub updated_at: Option<NaiveDateTime>,
+    #[serde(with = "my_time_format")]
     pub deadline: NaiveDateTime,
     pub last_four : String,
     pub card_last_four: String,
@@ -381,3 +384,67 @@ pub struct GetPaymentRequestAdmin {
     pub page: Option<u32>,
 }
 
+
+pub mod my_time_format {
+    use chrono::NaiveDateTime;
+    use serde::{self, Deserialize, Deserializer, Serializer};
+
+    const FORMAT: &str = "%Y-%m-%d %H:%M:%S";
+
+    pub fn serialize<S>(
+        date: &NaiveDateTime,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let s = date.format(FORMAT).to_string();
+        serializer.serialize_str(&s)
+    }
+
+    pub fn deserialize<'de, D>(
+        deserializer: D,
+    ) -> Result<NaiveDateTime, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        NaiveDateTime::parse_from_str(&s, FORMAT)
+            .map_err(serde::de::Error::custom)
+    }
+}
+
+pub mod my_time_format_opt {
+    use chrono::NaiveDateTime;
+    use serde::{self, Deserialize, Deserializer, Serializer};
+
+    const FORMAT: &str = "%Y-%m-%d %H:%M:%S";
+
+    pub fn serialize<S>(
+        date: &Option<NaiveDateTime>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match date {
+            Some(d) => serializer.serialize_str(&d.format(FORMAT).to_string()),
+            None => serializer.serialize_none(),
+        }
+    }
+
+    pub fn deserialize<'de, D>(
+        deserializer: D,
+    ) -> Result<Option<NaiveDateTime>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let opt = Option::<String>::deserialize(deserializer)?;
+        match opt {
+            Some(s) => NaiveDateTime::parse_from_str(&s, FORMAT)
+                .map(Some)
+                .map_err(serde::de::Error::custom),
+            None => Ok(None),
+        }
+    }
+}

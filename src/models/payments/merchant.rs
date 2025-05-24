@@ -1,3 +1,5 @@
+use crate::models::payments::payment::my_time_format_opt;
+use crate::models::payments::payment::my_time_format;
 use std::str::FromStr;
 use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
@@ -20,14 +22,18 @@ pub struct MerchantPayment {
     pub crypto_amount: Decimal,
     pub fee_type: FeeTypes,
     pub margin: Decimal,
+    pub exchange_rate: Decimal,
     pub fiat_fee: Decimal,
     pub crypto_fee: Decimal,
     pub holder_name: String,
     pub holder_account: String,
     pub bank_name: String,
     pub method: String,
+    #[serde(with = "my_time_format")]
     pub created_at: NaiveDateTime,
+    #[serde(with = "my_time_format_opt")]
     pub updated_at: Option<NaiveDateTime>,
+    #[serde(with = "my_time_format")]
     pub deadline: NaiveDateTime,
 }
 
@@ -35,7 +41,7 @@ impl ToSQL for MerchantPayment {
     fn sql() -> String {
         String::from("SELECT id, external_id, merchant_id, client_id, status,
         payment_side, currency, target_amount, fiat_amount, crypto_amount,
-        fee_type, margin, fiat_fee, crypto_fee, holder_name, holder_account,
+        fee_type, margin, exchange_rate, fiat_fee, crypto_fee, holder_name, holder_account,
         bank_name, method, created_at, updated_at, deadline
         FROM payments")
     }
@@ -54,6 +60,7 @@ impl From<tokio_postgres::Row> for MerchantPayment {
             target_amount: row.get("target_amount"),
             fiat_amount: row.get("fiat_amount"),
             crypto_amount: row.get("crypto_amount"),
+            exchange_rate: row.get("exchange_rate"),
             fee_type: FeeTypes::from_str(row.get("fee_type")).unwrap(),
             margin: row.get("margin"),
             fiat_fee: row.get("fiat_fee"),
@@ -84,6 +91,7 @@ impl From<FullPayment> for MerchantPayment {
             crypto_amount: payment.crypto_amount,
             fee_type: payment.fee_type,
             margin: payment.margin,
+            exchange_rate: payment.exchange_rate,
             fiat_fee: payment.fiat_fee,
             crypto_fee: payment.crypto_fee,
             holder_name: payment.holder_name,
@@ -113,6 +121,7 @@ impl From<payment_proto::PaymentProto> for MerchantPayment {
             crypto_amount: Decimal::from_str(payment_proto.crypto_amount.as_str()).unwrap(),
             fee_type: FeeTypes::from_str(payment_proto.fee_type.as_str()).unwrap(),
             margin: Decimal::from_str(payment_proto.margin.as_str()).unwrap(),
+            exchange_rate: Decimal::from_str(payment_proto.exchange_rate.as_str()).unwrap(),
             fiat_fee: Decimal::from_str(payment_proto.fiat_fee.as_str()).unwrap(),
             crypto_fee: Decimal::from_str(payment_proto.crypto_fee.as_str()).unwrap(),
             holder_name: payment_proto.holder_name,
@@ -130,9 +139,13 @@ impl From<payment_proto::PaymentProto> for MerchantPayment {
 #[derive(Deserialize, Debug, Clone)]
 pub struct GetMerchantPayments {
     pub id: Option<String>,
-    pub external_id: Option<String>,
     pub client_id: Option<String>,
     pub status: Option<Vec<PaymentStatusesSlim>>,
+    pub payment_side: Option<PaymentSides>,
+    #[serde(with = "my_time_format_opt")]
+    pub from: Option<NaiveDateTime>,
+    #[serde(with = "my_time_format_opt")]
+    pub to: Option<NaiveDateTime>,
     pub limit: Option<u32>,
     pub page: Option<u32>,
 }
