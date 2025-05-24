@@ -1,5 +1,3 @@
-use crate::models::payments::payment::my_time_format_opt;
-use crate::models::payments::payment::my_time_format;
 use std::str::FromStr;
 use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
@@ -23,11 +21,8 @@ pub struct TraderPayment {
     pub crypto_amount: Decimal,
     pub crypto_earnings: Decimal,
     pub fiat_earnings: Decimal,
-    #[serde(with = "my_time_format")]
     pub created_at: NaiveDateTime,
-    #[serde(with = "my_time_format_opt")]
     pub updated_at: Option<NaiveDateTime>,
-    #[serde(with = "my_time_format")]
     pub deadline: NaiveDateTime,
 }
 

@@ -1,5 +1,3 @@
-use crate::models::payments::payment::my_time_format_opt;
-use crate::models::payments::payment::my_time_format;
 use std::str::FromStr;
 use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
@@ -29,11 +27,8 @@ pub struct MerchantPayment {
     pub holder_account: String,
     pub bank_name: String,
     pub method: String,
-    #[serde(with = "my_time_format")]
     pub created_at: NaiveDateTime,
-    #[serde(with = "my_time_format_opt")]
     pub updated_at: Option<NaiveDateTime>,
-    #[serde(with = "my_time_format")]
     pub deadline: NaiveDateTime,
 }
 
@@ -142,9 +137,7 @@ pub struct GetMerchantPayments {
     pub client_id: Option<String>,
     pub status: Option<Vec<PaymentStatusesSlim>>,
     pub payment_side: Option<PaymentSides>,
-    #[serde(with = "my_time_format_opt")]
     pub from: Option<NaiveDateTime>,
-    #[serde(with = "my_time_format_opt")]
     pub to: Option<NaiveDateTime>,
     pub limit: Option<u32>,
     pub page: Option<u32>,
