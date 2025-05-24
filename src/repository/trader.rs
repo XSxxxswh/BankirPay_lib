@@ -17,7 +17,6 @@ pub async fn check_trader_is_blocked_from_redis(conn: &mut redis::aio::Multiplex
     }
 }
 
-
 pub async fn check_trader_is_blocked_from_db(client : &tokio_postgres::Client, trader_id : &str) -> Result<bool, LibError> {
     let row  = client.query_typed(
         "SELECT is_blocked FROM traders WHERE id=$1",

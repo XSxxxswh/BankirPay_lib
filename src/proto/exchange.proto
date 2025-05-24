@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package exchange;
+
+import "google/protobuf/empty.proto";
+
+
+message GetExchangeRateResponse {
+  double rate = 1;
+}
+
+service ExchangeService {
+  rpc GetExchangeRate(google.protobuf.Empty) returns (GetExchangeRateResponse);
+}
