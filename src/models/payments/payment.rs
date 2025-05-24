@@ -360,7 +360,6 @@ pub struct NewPaymentRequest {
     pub client_id: Option<String>,
     pub target_amount: Decimal,
     pub currency: String,
-    pub currency_type: String,
     pub side: PaymentSides,
     pub fee_type: FeeTypes,
     pub method_id: String,
