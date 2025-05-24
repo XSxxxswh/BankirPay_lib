@@ -9,7 +9,7 @@ pub mod requisites;
 pub mod traders;
 pub mod devices;
 pub mod banks;
-mod exchange;
+pub mod exchange;
 
 fn status_to_err(status: Status) -> LibError {
     error!("GRPC client_err {}", status.to_string());
