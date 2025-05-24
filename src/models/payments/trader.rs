@@ -71,7 +71,7 @@ impl From<FullPayment> for TraderPayment {
             status: it.status,
             payment_side: it.payment_side,
             currency: it.currency,
-            margin: it.margin,
+            margin: it.trader_margin,
             exchange_rate: it.exchange_rate,
             fiat_amount: it.fiat_amount,
             crypto_amount: it.crypto_amount,
