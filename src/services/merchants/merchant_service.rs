@@ -9,7 +9,7 @@ use uuid::Uuid;
 use crate::errors::LibError;
 use crate::errors::LibError::InternalError;
 use crate::merchant_proto;
-use crate::services::{need_retry, status_to_err};
+use crate::services::{connect_to_grpc_server, need_retry, status_to_err};
 
 pub(crate) const RETRY_COUNT: usize = 5;
 
@@ -22,13 +22,7 @@ pub struct MerchantService {
 }
 impl MerchantService {
     pub fn new(addr : String) -> Self {
-        let channel = Endpoint::from_str(addr.as_str())
-            .unwrap()
-            .connect_timeout(Duration::from_secs(5))
-            .timeout(Duration::from_secs(20))
-            .tcp_keepalive(Some(Duration::from_secs(10)))
-            .connect_lazy();
-
+        let channel = connect_to_grpc_server(addr.as_str());
         let client = merchant_proto::merchant_service_client::MerchantServiceClient::new(channel);
         Self { client }
     }

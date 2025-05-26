@@ -50,7 +50,7 @@ pub(crate) async fn check_merchant_is_blocked(
 pub async fn verify_signature(state: Arc<models::AuthState>, merchant_id: &str, signature: &str, raw_line: &str)
                               -> Result<bool, LibError>
 {
-    let public_key = RsaPublicKey::from_pkcs1_pem(get_public_key(state.clone(), merchant_id).await?.as_str()).map_err(|_| LibError::InternalError)?;
+    let public_key = RsaPublicKey::from_pkcs1_pem(get_public_key(state.clone(), merchant_id).await?.as_str()).map_err(|_| InternalError)?;
     let raw_line_bytes = raw_line.as_bytes();
     let signature = general_purpose::STANDARD
         .decode(signature)

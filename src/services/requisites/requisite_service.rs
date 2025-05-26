@@ -1,4 +1,4 @@
-use crate::services::LibError;
+use crate::services::{connect_to_grpc_server, LibError};
 use std::str::FromStr;
 use std::time::Duration;
 use deadpool::managed::{Metrics, Object, Pool, RecycleResult};
@@ -20,12 +20,7 @@ pub struct RequisitesService {
 
 impl RequisitesService {
     pub fn new(addr: String) -> Self {
-        let channel = Endpoint::from_str(addr.as_str())
-            .unwrap()
-            .connect_timeout(Duration::from_secs(5))
-            .timeout(Duration::from_secs(20))
-            .tcp_keepalive(Some(Duration::from_secs(10)))
-            .connect_lazy();
+        let channel = connect_to_grpc_server(addr.as_str());
         let client = requisites_proto::requisite_service_client::RequisiteServiceClient::new(channel);
         Self { client }
     }

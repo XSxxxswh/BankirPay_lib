@@ -5,11 +5,11 @@ pub mod requests;
 
 
 pub mod payment_proto {
-    use chrono::{DateTime, NaiveDateTime, Timelike};
+    use chrono::NaiveDateTime;
     use crate::models::payments;
 
     tonic::include_proto!("payment");
-    impl From<payments::payment::FullPayment> for payments::payment_proto::PaymentProto {
+    impl From<payments::payment::FullPayment> for PaymentProto {
         fn from(value: payments::payment::FullPayment) -> Self {
             return Self{
                 id: value.id,

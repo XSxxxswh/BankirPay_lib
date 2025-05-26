@@ -9,7 +9,7 @@ use tracing::{error, warn};
 use crate::{exchange_proto};
 use crate::errors::LibError;
 use crate::errors::LibError::InternalError;
-use crate::services::{need_retry, status_to_err};
+use crate::services::{connect_to_grpc_server, need_retry, status_to_err};
 
 #[derive(Clone)]
 pub struct ExchangeService {
@@ -18,13 +18,7 @@ pub struct ExchangeService {
 
 impl ExchangeService {
     pub fn new(addr : String) -> Self {
-        let channel = Endpoint::from_str(addr.as_str())
-            .unwrap()
-            .connect_timeout(Duration::from_secs(5))
-            .timeout(Duration::from_secs(20))
-            .tcp_keepalive(Some(Duration::from_secs(10)))
-            .connect_lazy();
-
+        let channel = connect_to_grpc_server(addr.as_str());
         let client = exchange_proto::exchange_service_client::ExchangeServiceClient::new(channel);
         Self { client }
     }

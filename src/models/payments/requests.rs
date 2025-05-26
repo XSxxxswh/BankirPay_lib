@@ -1,8 +1,6 @@
-use std::ops::Deref;
-use serde::Deserialize;
 use tokio_postgres::types::{ToSql, Type};
 use crate::models::payments::merchant::GetMerchantPayments;
-use crate::models::payments::payment::{GetPaymentRequestAdmin, PaymentSides, PaymentStatuses};
+use crate::models::payments::payment::{GetPaymentRequestAdmin, PaymentSides};
 use crate::models::payments::trader::GetPaymentsTrader;
 
 

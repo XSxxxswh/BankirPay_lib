@@ -11,7 +11,7 @@ const TTL_HOUR: usize = 60 * 60;
 pub async fn check_merchant_is_blocked_from_redis(conn: &mut redis::aio::MultiplexedConnection, trader_id : &str) -> Result<Option<bool>, LibError> {
     let key = format!("merchant:{}:is_blocked", trader_id);
     match conn.get::<_, Option<String>>(key).await.map_err(|e| {
-        error!("Error getting trader: {}", e);
+        error!("Error getting merchant: {}", e);
         InternalError
     })? {
         Some(value) => Ok(Some(value == "1")),
