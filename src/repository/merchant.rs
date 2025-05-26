@@ -69,7 +69,7 @@ pub async fn set_public_key_in_db(client: &tokio_postgres::Client, merchant_id: 
                                   -> Result<(), LibError>
 {
     let rows = map_err_with_log!(client.query_typed("UPDATE merchants SET public_key=$1 WHERE id=$2 RETURNING id",
-        &[(&merchant_id, Type::VARCHAR), (&public_key, Type::TEXT)]).await,
+        &[(&public_key, Type::TEXT), (&merchant_id, Type::VARCHAR)]).await,
         "Error setting merchant public key from DB",InternalError, merchant_id, public_key)?;
     if rows.is_empty() {
         return Err(LibError::MerchantNotFound);
