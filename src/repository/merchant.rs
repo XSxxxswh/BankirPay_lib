@@ -5,6 +5,7 @@ use tokio_postgres::types::Type;
 use tracing::error;
 use crate::errors::LibError;
 use crate::errors::LibError::{InternalError, MerchantNotFound};
+use crate::map_err_with_log;
 
 const TTL_HOUR: usize = 60 * 60;
 pub async fn check_merchant_is_blocked_from_redis(conn: &mut redis::aio::MultiplexedConnection, trader_id : &str) -> Result<Option<bool>, LibError> {
@@ -51,5 +52,47 @@ pub async fn set_trader_is_blocked_to_redis(
             InternalError
         })?;
 
+    Ok(())
+}
+
+pub async fn get_public_key_from_db(client: &tokio_postgres::Client, merchant_id: &str)
+                                    -> Result<String, LibError>
+{
+    let rows = map_err_with_log!(client.query_typed("SELECT public_key FROM merchants WHERE id=$1",
+        &[(&merchant_id, Type::VARCHAR)]).await,
+    "Error getting merchant public key from DB",InternalError, merchant_id)?;
+    let row = rows.first().ok_or(LibError::MerchantNotFound)?;
+    row.get::<_, Option<String>>(0).ok_or(LibError::NotFound)
+}
+
+pub async fn set_public_key_in_db(client: &tokio_postgres::Client, merchant_id: &str, public_key: &str)
+                                  -> Result<(), LibError>
+{
+    let rows = map_err_with_log!(client.query_typed("UPDATE merchants SET public_key=$1 WHERE id=$2 RETURNING id",
+        &[(&merchant_id, Type::VARCHAR), (&public_key, Type::TEXT)]).await,
+        "Error setting merchant public key from DB",InternalError, merchant_id, public_key)?;
+    if rows.is_empty() {
+        return Err(LibError::MerchantNotFound);
+    }
+    Ok(())
+}
+
+pub async fn get_public_key_from_redis(conn: &mut MultiplexedConnection, merchant_id: &str)
+                                       -> Result<Option<String>, LibError>
+{
+    let key = format!("merchant:{}:public_key", merchant_id);
+    let public_key: Option<String> = map_err_with_log!(conn.get(key).await,
+        "Error getting merchant public key from DB",
+        InternalError, merchant_id)?;
+    Ok(public_key)
+}
+
+pub async fn set_public_key_in_redis(conn: &mut MultiplexedConnection, merchant_id: &str, public_key: &str)
+                                     -> Result<(), LibError>
+{
+    let key = format!("merchant:{}:public_key", merchant_id);
+    let _: () = map_err_with_log!(conn.set(key, public_key).await,
+        "Error setting merchant public key in Redis",
+        InternalError, merchant_id)?;
     Ok(())
 }
