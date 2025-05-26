@@ -4,7 +4,7 @@ use base64::engine::general_purpose;
 use rsa::pkcs1::DecodeRsaPublicKey;
 use rsa::pkcs1::der::zeroize::Zeroizing;
 use rsa::{Pkcs1v15Sign, RsaPublicKey};
-use rsa::sha2::Sha256;
+use rsa::sha2::{Digest, Sha256};
 use rsa::traits::SignatureScheme;
 use tracing::{error, warn};
 use crate::errors::LibError;
@@ -56,10 +56,12 @@ pub async fn verify_signature(state: Arc<models::AuthState>, merchant_id: &str, 
         .decode(signature)
         .map_err(|_| LibError::Unauthorized)?;
     let padding = Pkcs1v15Sign::new::<Sha256>();
-    if let Ok(()) = padding.verify(&public_key, raw_line_bytes, &signature) {
-        Ok(true)
-    } else {
-        Ok(false)
+    match padding.verify(&public_key, &*Sha256::digest(raw_line_bytes), &signature) {
+        Ok(()) => Ok(true),
+        Err(e) => {
+            error!(err=e.to_string(), "Error verifying signature");
+            Ok(false)
+        }
     }
 }
 
