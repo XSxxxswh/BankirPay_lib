@@ -153,9 +153,14 @@ pub async fn merchant_api_middleware(
             if is_blocked {
                 return LibError::Forbidden.into_response();
             }
-            // Всё хорошо, вставляем merchant_id в extensions
+            // Всё хорошо, вставляем claims в extensions
             let mut req = Request::from_parts(parts, body_bytes.into());
-            req.extensions_mut().insert(merchant_id.to_string());
+            req.extensions_mut().insert(Arc::new(models::Claims{
+                sub: merchant_id.to_string(),
+                role: "merchant".to_string(),
+                exp: 0,
+                impersonated_by: None,
+            }));
             next.run(req).await
         }
         Ok(_) => LibError::Unauthorized.into_response(),
