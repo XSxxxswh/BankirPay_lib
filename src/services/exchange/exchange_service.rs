@@ -6,7 +6,7 @@ use tokio::time::sleep;
 use tonic::Request;
 use tonic::transport::Endpoint;
 use tracing::{error, warn};
-use crate::{exchange_proto};
+use crate::{exchange_proto, retry_grpc};
 use crate::errors::LibError;
 use crate::errors::LibError::InternalError;
 use crate::services::{connect_to_grpc_server, need_retry, status_to_err};
@@ -24,17 +24,9 @@ impl ExchangeService {
     }
 
     pub async fn get_exchange_rate(&mut self) -> Result<Decimal, LibError> {
-        for i in 0..5 {
-            if i >= 1 {
-                warn!("[GRPC] exchange retry send get exchange rate action attempt {}", i+1);
-            }
-            match self.client.get_exchange_rate(()).await {
-                Ok(result) => return Ok(Decimal::from_f64(result.get_ref().rate).ok_or(InternalError)?),
-                Err(e) if need_retry(e.code()) => sleep(Duration::from_millis(100)).await,
-                Err(e) => return Err(status_to_err(e))
-            }
+        match retry_grpc!(self.client.get_exchange_rate(()), 3) {
+            Ok(result) => Ok(Decimal::from_f64(result.get_ref().rate).ok_or(InternalError)?),
+            Err(e) => Err(status_to_err(e))
         }
-        error!("[GRPC] exchange retry count exceeded");
-        Err(InternalError)
     }
 }

@@ -25,8 +25,7 @@ macro_rules! retry {
 pub fn is_connection_err<T>(e: &T) -> bool
 where T: ToString
 {
-    e.is_closed()
-        || e.to_string().contains("connection")
+    e.to_string().contains("connection")
         || e.to_string().contains("broken")
         || e.to_string().contains("time")
         || e.to_string().contains("timed")

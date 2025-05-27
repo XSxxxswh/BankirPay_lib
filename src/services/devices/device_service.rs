@@ -1,10 +1,11 @@
+use tracing::warn;
 use std::str::FromStr;
 use std::time::Duration;
 use tokio::time::sleep;
 use tonic::Request;
 use tonic::transport::Endpoint;
 use tracing::error;
-use crate::{device_proto};
+use crate::{device_proto, retry_grpc};
 use crate::errors::LibError;
 use crate::errors::LibError::InternalError;
 use crate::services::{connect_to_grpc_server, need_retry, status_to_err};
@@ -25,14 +26,9 @@ impl DeviceService {
         let request = device_proto::GetDeviceStatusReq{
             device_id,
         };
-        for _ in 0..RETRY_COUNT {
-            match self.client.get_device_status(Request::new(request.clone())).await {
-                Ok(result) => return Ok(result.into_inner()),
-                Err(e) if need_retry(e.code()) => sleep(Duration::from_millis(100)).await,
-                Err(e) => return Err(status_to_err(e))
-            }
+        match retry_grpc!(self.client.get_device_status(Request::new(request.clone())), 3) {
+            Ok(result) => Ok(result.into_inner()),
+            Err(e) => Err(status_to_err(e))
         }
-        error!("retry count exceeded");
-        Err(InternalError)
     }
 }

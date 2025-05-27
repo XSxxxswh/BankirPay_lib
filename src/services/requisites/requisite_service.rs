@@ -7,7 +7,7 @@ use tonic::Request;
 use tonic::transport::Endpoint;
 use tracing::{error, warn};
 use crate::errors::LibError::InternalError;
-use crate::requisites_proto;
+use crate::{requisites_proto, retry_grpc};
 use crate::services::{need_retry, status_to_err};
 
 
@@ -34,25 +34,18 @@ impl RequisitesService {
             bank,
         };
         let start = Instant::now();
-        for i in 0..RETRY_COUNT {
-            if i > 1 {
-                warn!("[GRPC] RequisitesService.get_requisites_for_payment() retry!");
-            }
-            let res =  self.client.get_requisites_for_payment(Request::new(request.clone())).await;
-            match res {
-                Ok(result) => {
-                    if start.elapsed().as_millis() > 50 {
-                        warn!("[GRPC] Requisite SLOW to get requisites! {:?}", start.elapsed());
-                    }
-                    return Ok(result.into_inner().requisites)
-                },
-                Err(e) if need_retry(e.code()) => sleep(Duration::from_millis(100)).await,
-                Err(e) => return Err(status_to_err(e))
-            }
 
+        let res =
+            retry_grpc!(self.client.get_requisites_for_payment(Request::new(request.clone())), 3);
+        match res {
+            Ok(result) => {
+                if start.elapsed().as_millis() > 50 {
+                    warn!("[GRPC] Requisite SLOW to get requisites! {:?}", start.elapsed());
+                }
+                Ok(result.into_inner().requisites)
+            },
+            Err(e) => Err(status_to_err(e))
         }
-        error!("retry count exceeded");
-        Err(InternalError)
     }
 }
 

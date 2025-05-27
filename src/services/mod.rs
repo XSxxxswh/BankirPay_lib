@@ -57,3 +57,29 @@ fn need_retry(code: Code) -> bool {
         _ => false,
     }
 }
+#[macro_export]
+macro_rules! retry_grpc {
+    ($request:expr, $max_retries:expr) => {{
+        let mut response;
+        let mut attempt = 0;
+        loop {
+            attempt += 1;
+            response = $request.await;
+            match &response {
+                Ok(response) => {
+                    break;
+                },
+                &Err(ref e) if need_retry(e.code()) && attempt < $max_retries => {
+                    warn!(err=e.message(),"[GRPC] error get response. Retrying...");
+                    tokio::time::sleep(Duration::from_millis(100)).await;
+                    continue;
+                },
+                &Err(ref e) => {
+                    error!(err=e.message(),"[GRPC] error get response");
+                    break;
+                }
+            }
+        }
+        response
+    }};
+}

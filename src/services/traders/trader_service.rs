@@ -13,7 +13,7 @@ use crate::errors::LibError;
 use crate::errors::LibError::InternalError;
 
 use crate::services::{connect_to_grpc_server, need_retry, status_to_err};
-use crate::trader_proto;
+use crate::{retry_grpc, trader_proto};
 
 const RETRY_COUNT: i32 = 3;
 pub const TRADER_CHANGE_BALANCE_TOPIC: &'static str = "trader_change_balance";
@@ -37,6 +37,9 @@ pub struct TraderService {
     client: trader_proto::trader_service_client::TraderServiceClient<Channel>,
 }
 
+
+
+
 impl TraderService {
     pub fn new(addr : String) -> Self {
         let channel = connect_to_grpc_server(addr.as_str());
@@ -53,19 +56,9 @@ impl TraderService {
             action_type: action_type as i32,
             idempotent_key,
         };
-        let start = Instant::now();
-        for _ in 0..RETRY_COUNT {
-            match self.client.change_balance(Request::new(request.clone())).await {
-                Ok(result) => {
-                    if start.elapsed().as_millis() > 200 {
-                        warn!("[GRPC] Slow changing balance {:?}", start.elapsed());
-                    }
-                    return Ok(result.into_inner())
-                },
-                Err(e) if need_retry(e.code()) => sleep(Duration::from_millis(100)).await,
-                Err(e) => return Err(status_to_err(e))
-            }
-        }
+
+        retry_grpc!(self.client.change_balance(Request::new(request.clone())), 3)
+            .map_err(|e| status_to_err(e))?;
         error!("retry count exceeded");
         Err(InternalError)
     }
@@ -75,17 +68,17 @@ impl TraderService {
         let request = trader_proto::GetTraderMarginRequest {
             trader_id,
         };
-        for _ in 0..RETRY_COUNT {
-            match self.client.get_trader_margin(Request::new(request.clone())).await {
-                Ok(result) => return Ok(result.into_inner()),
-                Err(e) if need_retry(e.code()) => sleep(Duration::from_millis(100)).await,
-                Err(e) => return Err(status_to_err(e))
-            }
+
+        match retry_grpc!(self.client.get_trader_margin(Request::new(request.clone())), 3) {
+            Ok(result) => Ok(result.into_inner()),
+            Err(e) => Err(status_to_err(e))
         }
-        error!("retry count exceeded");
-        Err(InternalError)
+
+
     }
 }
+
+
 
 
 pub struct TraderServiceManager {

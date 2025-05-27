@@ -8,7 +8,7 @@ use tracing::field::debug;
 use uuid::Uuid;
 use crate::errors::LibError;
 use crate::errors::LibError::InternalError;
-use crate::merchant_proto;
+use crate::{merchant_proto, retry, retry_grpc};
 use crate::services::{connect_to_grpc_server, need_retry, status_to_err};
 
 pub(crate) const RETRY_COUNT: usize = 5;
@@ -36,35 +36,23 @@ impl MerchantService {
             action_type: action_type as i32,
             idempotent_key,
         };
-        for i in 0..RETRY_COUNT {
-            if i >= 1 {
-                warn!(merchant_id=merchant_id, action_type=action_type.as_str_name(), "[GRPC] retry send balance action attempt {}", i+1);
-            }
-            match self.client.change_balance(Request::new(request.clone())).await {
-                Ok(result) => return Ok(result.into_inner()),
-                Err(e) if need_retry(e.code()) => sleep(Duration::from_millis(100)).await,
-                Err(e) => return Err(status_to_err(e))
-            }
+        match retry_grpc!(self.client.change_balance(Request::new(request.clone())), 3) {
+            Ok(result) => Ok(result.into_inner()),
+            Err(e) => Err(status_to_err(e))
         }
-        error!(merchant_id=merchant_id,amount=amount, action_type=action_type.as_str_name(),"[GRPC] retry count exceeded");
-        Err(InternalError)
     }
 
     pub async fn get_payment_method(&mut self, merchant_id: String, payment_method_id: String ) -> Result<merchant_proto::PaymentMethod, LibError> {
         debug!(merchant_id=merchant_id, payment_method_id=%payment_method_id, "[GRPC] send get_payment_method");
         let request = merchant_proto::GetPaymentMethodRequest{
             merchant_id: merchant_id.clone(),
-            payment_method_id: payment_method_id.clone(),
+           payment_method_id: payment_method_id.clone(),
         };
-        for _ in 0..RETRY_COUNT {
-            match self.client.get_payment_method(Request::new(request.clone())).await {
-                Ok(result) => return Ok(result.into_inner()),
-                Err(e) if need_retry(e.code()) => sleep(Duration::from_millis(100)).await,
-                Err(e) => return Err(status_to_err(e))
-            }
+
+        match retry_grpc!(self.client.get_payment_method(Request::new(request.clone())), 3) {
+            Ok(result) => Ok(result.into_inner()),
+            Err(e) => Err(status_to_err(e))
         }
-        error!(merchant_id=merchant_id,payment_method_id=payment_method_id,"[GRPC] retry count exceeded method = get_payment_method");
-        Err(InternalError)
     }
 
     pub async fn get_merchant_pms(&mut self, merchant_id: String) -> Result<merchant_proto::PaymentMethodList, LibError> {
@@ -72,18 +60,10 @@ impl MerchantService {
         let request = merchant_proto::GetPmListReq{
             merchant_id: merchant_id.clone(),
         };
-        for i in 0..RETRY_COUNT {
-            if i >= 1 {
-                warn!(merchant_id=merchant_id, "[GRPC] retry send pm list action attempt {}", i+1);
-            }
-            match self.client.get_pm_list(Request::new(request.clone())).await {
-                Ok(result) => return Ok(result.into_inner()),
-                Err(e) if need_retry(e.code()) => sleep(Duration::from_millis(100)).await,
-                Err(e) => return Err(status_to_err(e))
-            }
+        match retry_grpc!(self.client.get_pm_list(Request::new(request.clone())), 3) {
+            Ok(result) => Ok(result.into_inner()),
+            Err(e) => Err(status_to_err(e))
         }
-        error!(merchant_id=merchant_id,"[GRPC] retry count exceeded method = get_merchant_pms");
-        Err(InternalError)
     }
 
     pub async fn get_merchant_webhook_url(&mut self, merchant_id: String)
@@ -92,17 +72,9 @@ impl MerchantService {
         let request = merchant_proto::GetWebhookUrlRequest{
             merchant_id: merchant_id.clone(),
         };
-        for i in 0..RETRY_COUNT {
-            if i >= 1 {
-                warn!(merchant_id=merchant_id, "[GRPC] retry send get_merchant_webhook_url action attempt {}", i+1);
-            }
-            match self.client.get_webhook_url(Request::new(request.clone())).await {
-                Ok(result) => return Ok(result.into_inner().webhook_url),
-                Err(e) if need_retry(e.code()) => sleep(Duration::from_millis(100)).await,
-                Err(e) => return Err(status_to_err(e))
-            }
+        match retry_grpc!(self.client.get_webhook_url(Request::new(request.clone())), 3) {
+            Ok(result) => Ok(result.into_inner().webhook_url),
+            Err(e) => Err(status_to_err(e))
         }
-        error!(merchant_id=merchant_id,"[GRPC] retry count exceeded method = get_merchant_webhook_url");
-        Err(InternalError)
     }
 }
