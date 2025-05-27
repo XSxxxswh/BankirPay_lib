@@ -22,11 +22,14 @@ macro_rules! retry_sql {
         result
     }};
 }
-pub fn is_connection_err(e: &tokio_postgres::Error) -> bool {
+pub fn is_connection_err<T>(e: &T) -> bool
+where T: ToString
+{
     e.is_closed()
         || e.to_string().contains("connection")
         || e.to_string().contains("broken")
         || e.to_string().contains("time")
         || e.to_string().contains("timed")
         || e.to_string().contains("conn")
+        || e.to_string().contains("io")
 }
