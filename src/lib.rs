@@ -3,7 +3,7 @@ mod build;
 pub mod middlewares;
 pub mod errors;
 mod repository;
-mod use_case;
+pub mod use_case;
 pub mod services;
 
 pub mod device_proto {
