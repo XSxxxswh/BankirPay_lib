@@ -1,7 +1,7 @@
 pub mod trader;
 pub(crate) mod merchant;
 #[macro_export]
-macro_rules! retry_sql {
+macro_rules! retry {
     ($sql_func:expr, $max_retries:expr) => {{
         let mut result;
         let mut attempt = 0;
