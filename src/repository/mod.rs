@@ -7,13 +7,15 @@ macro_rules! retry {
         let mut attempt = 0;
         loop {
             attempt += 1;
-            result = $sql_func.await;
-            match result {
-                Err(ref e) if attempt < $max_retries && is_connection_err(e) => {
+            match tokio::time::timeout(Duration::from_millis(300), $sql_func).await {
+                Ok(Err(ref e)) if attempt < $max_retries && is_connection_err(e) => {
                     warn!(err=e.to_string(), "Error do request. Retrying...");
                     tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
                     continue;
                 },
+                Err(_) => {
+                    warn!(err=e.to_string(), "timeout do request. Retrying...");
+                }
                _ => {
                     break;
                 }

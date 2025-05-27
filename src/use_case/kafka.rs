@@ -1,6 +1,7 @@
 use std::time::Duration;
 use rdkafka::producer::FutureProducer;
-use tracing::{debug, warn};
+use rdkafka::util::Timeout;
+use tracing::{debug, error, warn};
 
 
 pub async fn send_kafka_message(producer: &FutureProducer, topic: &str, key: &str, payload: &[u8]) {
@@ -12,15 +13,20 @@ pub async fn send_kafka_message(producer: &FutureProducer, topic: &str, key: &st
         let record = rdkafka::producer::FutureRecord::to(topic)
             .key(key)
             .payload(payload);
-        match producer.send(record, Duration::from_secs(5)).await {
-            Ok(f) => {
+         match tokio::time::timeout(Duration::from_millis(300), producer.send(record, Timeout::Never)).await {
+            Ok(Ok(f)) => {
                 debug!("Sent kafka message {:?}", f);
                 break
             },
-            Err((e, _)) => {
-                warn!(err=e.to_string(), "Error sending kafka message");
+            Ok(Err((e, _))) => {
+                warn!(err=e.to_string(), "Error sending kafka message. Retrying...");
                 continue
-            }
+            },
+             Err(_) => {
+                 warn!("sending kafka message timeout. Retrying...");
+                 continue;
+             }
         }
     }
+    error!("Kafka send kafka message: Timeout");
 }

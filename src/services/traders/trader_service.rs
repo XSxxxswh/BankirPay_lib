@@ -1,10 +1,7 @@
-use std::str::FromStr;
 use std::time::Duration;
-
 use deadpool::managed::{Metrics, Object, Pool, RecycleResult};
 use prost::Message;
 use rdkafka::producer::{FutureProducer, FutureRecord};
-use tokio::time::{sleep, Instant};
 use tonic::{Request};
 use tonic::transport::{Channel, Endpoint};
 use tracing::{debug, error, info, warn};

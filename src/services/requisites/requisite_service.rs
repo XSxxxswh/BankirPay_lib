@@ -1,15 +1,12 @@
 use crate::services::{connect_to_grpc_server, LibError};
 use std::str::FromStr;
-use std::time::Duration;
 use deadpool::managed::{Metrics, Object, Pool, RecycleResult};
-use tokio::time::{sleep, Instant};
+use tokio::time::{Instant};
 use tonic::Request;
-use tonic::transport::Endpoint;
 use tracing::{error, warn};
-use crate::errors::LibError::InternalError;
 use crate::{requisites_proto, retry_grpc};
 use crate::services::{need_retry, status_to_err};
-
+use std::time::Duration;
 
 const RETRY_COUNT: usize = 3;
 

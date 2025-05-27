@@ -1,14 +1,10 @@
-use std::str::FromStr;
 use std::time::Duration;
-use tokio::time::sleep;
 use tonic::Request;
-use tonic::transport::Endpoint;
 use tracing::{debug, error, warn};
-use tracing::field::debug;
 use uuid::Uuid;
 use crate::errors::LibError;
 use crate::errors::LibError::InternalError;
-use crate::{merchant_proto, retry, retry_grpc};
+use crate::{merchant_proto, retry_grpc};
 use crate::services::{connect_to_grpc_server, need_retry, status_to_err};
 
 pub(crate) const RETRY_COUNT: usize = 5;

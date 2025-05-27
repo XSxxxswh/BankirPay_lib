@@ -44,7 +44,7 @@ fn connect_to_grpc_server(addr: &str) -> tonic::transport::Channel
     Endpoint::from_str(addr)
         .unwrap()
         .connect_timeout(Duration::from_secs(5))
-        .timeout(Duration::from_secs(20))
+        .timeout(Duration::from_secs(1))
         .tcp_keepalive(Some(Duration::from_secs(10)))
         .connect_lazy()
 }
