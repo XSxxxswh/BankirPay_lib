@@ -3,7 +3,7 @@ syntax = "proto3";
 package payment;
 
 import "google/protobuf/timestamp.proto";
-
+import "google/protobuf/empty.proto";
 message PaymentProto {
   string id = 1;
   string external_id = 2;
@@ -38,4 +38,30 @@ message PaymentProto {
   string last_four = 31;
   string card_last_four = 32;
   optional string close_by = 33;
+}
+
+message ByExternalID {
+  string external_id = 1;
+  string merchant_id = 2;
+}
+
+message ByID {
+  string id = 1;
+  string merchant_id = 2;
+}
+
+message GetPaymentByIDRequest {
+  oneof search_type {
+    ByExternalID external = 1;
+    ByID local = 2;
+  }
+}
+
+message ClosePaymentRequest {
+  string payment_id = 1;
+  optional double amount = 2;
+}
+service PaymentService {
+  rpc GetPaymentByID(GetPaymentByIDRequest) returns (PaymentProto);
+  rpc ClosePayment(ClosePaymentRequest) returns(google.protobuf.Empty);
 }
