@@ -47,17 +47,17 @@ impl TraderService {
 
     pub async fn change_balance(&mut self, trader_id: String, amount: f64, action_type: trader_proto::BalanceActionType) -> Result<(), LibError> {
         let idempotent_key = Uuid::now_v7().to_string();
-        let request = trader_proto::ChangeBalanceRequest {
+        let req = trader_proto::ChangeBalanceRequest {
             trader_id,
             amount,
             action_type: action_type as i32,
             idempotent_key,
         };
 
-        retry_grpc!(self.client.change_balance(Request::new(request.clone())), 3)
-            .map_err(|e| status_to_err(e))?;
-        error!("retry count exceeded");
-        Err(InternalError)
+        match retry_grpc!(self.client.change_balance(Request::new(req.clone())), 3) {
+            Ok(re) => Ok(re.into_inner()),
+            Err(e) => Err(status_to_err(e))
+        }
     }
 
     pub async fn get_trader_margin(&mut self, trader_id: String) -> Result<trader_proto::GetTraderMarginResponse, LibError> {
